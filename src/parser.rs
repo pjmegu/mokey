@@ -37,3 +37,17 @@ impl<'a> Parser<'a> {
         Ok(ast::Root { int })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    macro_rules! parse_assert {
+        ($input:expr, $pat:pat) => {
+            std::assert_matches!(parse(&crate::lexer::lexer($input).unwrap()), $pat)
+        };
+    }
+    #[test]
+    fn root() {
+        parse_assert!("14", Ok(ast::Root { int: 14 }))
+    }
+}
