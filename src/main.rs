@@ -18,6 +18,7 @@ fn main() {
     let script = arg.script;
     let token = dbg!(lexer::lexer(&script)).unwrap();
     let ast = dbg!(parser::parse(&token)).unwrap();
-    let c = dbg!(generate::generate(ast));
+    let c = generate::generate(ast);
+    eprintln!("{c}");
     println!("{}", c)
 }

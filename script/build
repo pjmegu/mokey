@@ -1,0 +1,6 @@
+#! /bin/sh
+
+cargo run -- -s "$@" | clang -x c - -o out
+./out
+echo $?
+rm out
