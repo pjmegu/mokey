@@ -28,6 +28,8 @@
         devShells.default = pkgs.mkShell {
           packages = [
             toolchain
+            pkgs.clang-tools
+            pkgs.clang
           ];
         };
       }
