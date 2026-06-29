@@ -5,9 +5,20 @@ pub enum Token {
     Int(i64),
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum LexError {
     UnexpectedByte(u8),
+}
+
+impl std::fmt::Debug for LexError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LexError::UnexpectedByte(ch) => f
+                .debug_tuple(stringify!(LexError::UnexpectedByte))
+                .field(ch)
+                .finish(),
+        }
+    }
 }
 
 pub fn lexer(script: &str) -> Result<Vec<Token>, LexError> {

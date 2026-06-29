@@ -3,8 +3,6 @@ mod generate;
 mod lexer;
 mod parser;
 
-use std::path::PathBuf;
-
 use clap::Parser;
 
 #[derive(Parser)]
