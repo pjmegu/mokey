@@ -59,6 +59,9 @@ impl<'a> Lexer<'a> {
                 b'0'..=b'9' => {
                     self.num(b)?;
                 }
+                b'+' => {
+                    self.result.push(Token::Plus);
+                }
                 _ => return Err(LexError::UnexpectedByte(b)),
             }
         }
@@ -117,5 +120,10 @@ mod tests {
     #[test]
     fn num_many() {
         lex_assert!("42 24", Ok([Token::Int(42), Token::Int(24)]))
+    }
+
+    #[test]
+    fn plus_sign() {
+        lex_assert!("42+39", Ok([Token::Int(42), Token::Plus, Token::Int(39)]))
     }
 }
