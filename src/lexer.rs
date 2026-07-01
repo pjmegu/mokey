@@ -3,6 +3,8 @@ use std::{iter::Peekable, str::Bytes};
 #[derive(Debug, Clone)]
 pub enum Token {
     Int(i64),
+
+    Plus,
 }
 
 #[derive(Clone)]
@@ -15,7 +17,7 @@ impl std::fmt::Debug for LexError {
         match self {
             LexError::UnexpectedByte(ch) => f
                 .debug_tuple(stringify!(LexError::UnexpectedByte))
-                .field(ch)
+                .field(&char::from(*ch))
                 .finish(),
         }
     }
