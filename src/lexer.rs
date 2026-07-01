@@ -46,6 +46,8 @@ impl<'a> Lexer<'a> {
 
     fn root(&mut self) -> Result<(), LexError> {
         loop {
+            self.skip()?;
+
             let b = match self.script.next() {
                 Some(b) => b,
                 None => break,
@@ -79,6 +81,19 @@ impl<'a> Lexer<'a> {
 
         Ok(())
     }
+
+    fn skip(&mut self) -> Result<(), LexError> {
+        while let Some(c) = self.script.peek() {
+            match *c {
+                b' ' | b'\n' | b'\t' => {
+                    self.script.next();
+                }
+                _ => break,
+            }
+        }
+
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -95,5 +110,10 @@ mod tests {
     fn num() {
         lex_assert!("42", Ok([Token::Int(42)]));
         lex_assert!("1_4", Ok([Token::Int(14)]));
+    }
+
+    #[test]
+    fn num_many() {
+        lex_assert!("42 24", Ok([Token::Int(42), Token::Int(24)]))
     }
 }
