@@ -10,9 +10,10 @@ struct Parser<'a> {
     pos: usize,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ParseError {
     UnexpectedToken,
+    ExpectedToken,
 }
 
 impl<'a> Parser<'a> {
@@ -29,25 +30,79 @@ impl<'a> Parser<'a> {
         token
     }
 
+    fn peek(&mut self, index: usize) -> Option<&Token> {
+        self.tokens.get(self.pos + index)
+    }
+
     fn parse(mut self) -> Result<ast::Root, ParseError> {
-        let int = match self.next() {
-            Some(Token::Int(i)) => *i,
-            _ => return Err(ParseError::UnexpectedToken),
+        let expr = self.expr()?;
+        Ok(ast::Root { expr })
+    }
+
+    fn expr(&mut self) -> Result<ast::Expr, ParseError> {
+        self.expr_inner(0)
+    }
+
+    fn expr_inner(&mut self, min_bp: usize) -> Result<ast::Expr, ParseError> {
+        let mut leading = match self.next() {
+            Some(Token::Int(i)) => ast::Expr::Int(*i),
+            Some(_) => return Err(ParseError::UnexpectedToken),
+            None => return Err(ParseError::ExpectedToken),
         };
-        Ok(ast::Root { int })
+
+        loop {
+            match self.peek(0) {
+                Some(Token::Plus) => {
+                    const FOWARD_BP: usize = 50;
+                    const BACKWARD_BP: usize = 51;
+
+                    if min_bp >= FOWARD_BP {
+                        return Ok(leading);
+                    }
+
+                    self.next();
+                    let following = self.expr_inner(BACKWARD_BP)?;
+                    leading = ast::Expr::Plus(Box::new(leading), Box::new(following));
+                }
+                _ => return Ok(leading),
+            }
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
     macro_rules! parse_assert {
         ($input:expr, $pat:pat) => {
             std::assert_matches!(parse(&crate::lexer::lexer($input).unwrap()), $pat)
         };
     }
+
+    macro_rules! parse_assert_eq {
+        ($input:expr, $result:expr) => {
+            assert_eq!(parse(&crate::lexer::lexer($input).unwrap()), $result)
+        };
+    }
+
     #[test]
-    fn root() {
-        parse_assert!("14", Ok(ast::Root { int: 14 }))
+    fn num() {
+        parse_assert!(
+            "14",
+            Ok(ast::Root {
+                expr: ast::Expr::Int(14)
+            })
+        )
+    }
+
+    #[test]
+    fn plus_expr() {
+        parse_assert_eq!(
+            "14 + 24",
+            Ok(ast::Root {
+                expr: ast::Expr::Plus(Box::new(ast::Expr::Int(14)), Box::new(ast::Expr::Int(24)))
+            })
+        )
     }
 }

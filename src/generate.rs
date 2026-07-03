@@ -1,7 +1,10 @@
 use crate::ast;
 
 pub fn generate(ast: ast::Root) -> String {
-    let int = ast.int;
+    let int = match ast.expr {
+        ast::Expr::Int(i) => i,
+        _ => todo!()
+    };
 
     format!(
         r"
