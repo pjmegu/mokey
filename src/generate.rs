@@ -39,6 +39,8 @@ impl Generator {
             }
         }
 
+        self.lines.push(format!("return v{};", self.ops.len() - 1));
+
         let c = self.lines.join("\n");
         Ok(c)
     }
