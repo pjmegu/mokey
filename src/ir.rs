@@ -1,29 +1,29 @@
 use crate::ast;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct IR {
     pub ops: Vec<Op>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum VType {
     Int,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct Op {
     pub kind: OpKind,
     pub result_type: VType,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum OpKind {
     NOP,
     ConstInt(i64),
     Plus(usize, usize),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum GenIRError {}
 
 pub fn genir(root: ast::Root) -> Result<IR, GenIRError> {
@@ -86,5 +86,49 @@ impl Generator {
                 Ok(op)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn int() {
+        assert_eq!(
+            genir(ast::Root {
+                expr: ast::Expr::Int(15)
+            }),
+            Ok(IR {
+                ops: vec![Op {
+                    kind: OpKind::ConstInt(15),
+                    result_type: VType::Int
+                }]
+            })
+        )
+    }
+    #[test]
+    fn plus() {
+        assert_eq!(
+            genir(ast::Root {
+                expr: ast::Expr::Plus(Box::new(ast::Expr::Int(15)), Box::new(ast::Expr::Int(24)))
+            }),
+            Ok(IR {
+                ops: vec![
+                    Op {
+                        kind: OpKind::ConstInt(15),
+                        result_type: VType::Int
+                    },
+                    Op {
+                        kind: OpKind::ConstInt(24),
+                        result_type: VType::Int
+                    },
+                    Op {
+                        kind: OpKind::Plus(0, 1),
+                        result_type: VType::Int
+                    }
+                ]
+            })
+        )
     }
 }
