@@ -41,7 +41,14 @@ impl Generator {
 
         self.lines.push(format!("return v{};", self.ops.len() - 1));
 
-        let c = self.lines.join("\n");
+        let c = format!(
+            r#"
+int main() {{
+{}
+}}
+"#,
+            self.lines.join("\n")
+        );
         Ok(c)
     }
 }
