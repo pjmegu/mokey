@@ -104,8 +104,7 @@ impl<'a> Lexer<'a> {
 
         while let Some(c) = self.script.peek() {
             match c {
-                b'0'..=b'9' => string.push((*c) as char),
-                b'_' => {}
+                b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_' => string.push((*c) as char),
                 _ => break,
             }
             self.script.next();
