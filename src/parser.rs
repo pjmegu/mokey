@@ -1,4 +1,7 @@
-use crate::{ast, lexer::Token};
+use crate::{
+    ast::{self},
+    lexer::Token,
+};
 
 pub fn parse(tokens: &[Token]) -> Result<ast::Root, ParseError> {
     let parser = Parser::new(tokens);
@@ -35,8 +38,11 @@ impl<'a> Parser<'a> {
     }
 
     fn parse(mut self) -> Result<ast::Root, ParseError> {
-        let expr = self.expr()?;
-        Ok(ast::Root { expr })
+        let mut exprs = Vec::new();
+        while let Ok(expr) = self.expr() {
+            exprs.push(expr);
+        }
+        Ok(ast::Root { expr: exprs })
     }
 
     fn expr(&mut self) -> Result<ast::Expr, ParseError> {
@@ -74,12 +80,6 @@ impl<'a> Parser<'a> {
 mod tests {
     use super::*;
 
-    macro_rules! parse_assert {
-        ($input:expr, $pat:pat) => {
-            std::assert_matches!(parse(&crate::lexer::lexer($input).unwrap()), $pat)
-        };
-    }
-
     macro_rules! parse_assert_eq {
         ($input:expr, $result:expr) => {
             assert_eq!(parse(&crate::lexer::lexer($input).unwrap()), $result)
@@ -88,10 +88,10 @@ mod tests {
 
     #[test]
     fn num() {
-        parse_assert!(
+        parse_assert_eq!(
             "14",
             Ok(ast::Root {
-                expr: ast::Expr::Int(14)
+                expr: vec![ast::Expr::Int(14)]
             })
         )
     }
@@ -101,7 +101,10 @@ mod tests {
         parse_assert_eq!(
             "14 + 24",
             Ok(ast::Root {
-                expr: ast::Expr::Plus(Box::new(ast::Expr::Int(14)), Box::new(ast::Expr::Int(24)))
+                expr: vec![ast::Expr::Plus(
+                    Box::new(ast::Expr::Int(14)),
+                    Box::new(ast::Expr::Int(24))
+                )]
             })
         )
     }

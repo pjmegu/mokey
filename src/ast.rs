@@ -1,6 +1,6 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct Root {
-    pub expr: Expr,
+    pub expr: Vec<Expr>,
 }
 
 #[derive(Debug, Clone, PartialEq)]

@@ -63,7 +63,9 @@ impl Generator {
     }
 
     fn generate(mut self, ast: ast::Root) -> Result<IR, GenIRError> {
-        self.expr(&ast.expr)?;
+        for expr in ast.expr {
+            self.expr(&expr)?;
+        }
         Ok(IR { ops: self.ops })
     }
 
@@ -97,7 +99,7 @@ mod tests {
     fn int() {
         assert_eq!(
             genir(ast::Root {
-                expr: ast::Expr::Int(15)
+                expr: vec![ast::Expr::Int(15)]
             }),
             Ok(IR {
                 ops: vec![Op {
@@ -111,7 +113,10 @@ mod tests {
     fn plus() {
         assert_eq!(
             genir(ast::Root {
-                expr: ast::Expr::Plus(Box::new(ast::Expr::Int(15)), Box::new(ast::Expr::Int(24)))
+                expr: vec![ast::Expr::Plus(
+                    Box::new(ast::Expr::Int(15)),
+                    Box::new(ast::Expr::Int(24))
+                )]
             }),
             Ok(IR {
                 ops: vec![
