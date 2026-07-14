@@ -22,9 +22,9 @@ impl Generator {
     }
 
     fn generate(mut self) -> Result<String, GenCError> {
-        for (vnum, op) in self.ops.iter_mut().enumerate() {
+        for (vnum, op) in self.ops.iter().enumerate() {
             let ty = get_ty_name(&op.result_type);
-            match op.kind {
+            match &op.kind {
                 ir::OpKind::NOP => {
                     continue;
                 }
@@ -36,10 +36,20 @@ impl Generator {
                     let expr = format!("v{lhs} + v{rhs}");
                     self.lines.push(format!("{ty} v{vnum} = {expr};"));
                 }
+                ir::OpKind::SetVar(ident, expr) => {
+                    let e = format!("v{expr}");
+                    let ty = get_ty_name(&self.ops[*expr].result_type);
+                    self.lines.push(format!("{ty} var_{ident} = {e};"));
+                }
+                ir::OpKind::GetVar(ident) => {
+                    let expr = format!("var_{ident}");
+                    self.lines.push(format!("{ty} v{vnum} = {expr};"));
+                }
+                ir::OpKind::Return(expr) => {
+                    self.lines.push(format!("return v{expr};"));
+                }
             }
         }
-
-        self.lines.push(format!("return v{};", self.ops.len() - 1));
 
         let c = format!(
             r#"
@@ -56,5 +66,6 @@ int main() {{
 fn get_ty_name(ty: &ir::VType) -> &str {
     match ty {
         ir::VType::Int => "int",
+        ir::VType::None => "UNREALIZED_TYPE",
     }
 }

@@ -1,13 +1,10 @@
+use std::collections::HashSet;
+
 use crate::ast;
 
 #[derive(Debug, PartialEq)]
 pub struct IR {
     pub ops: Vec<Op>,
-}
-
-#[derive(Debug, PartialEq)]
-pub enum VType {
-    Int,
 }
 
 #[derive(Debug, PartialEq)]
@@ -21,10 +18,22 @@ pub enum OpKind {
     NOP,
     ConstInt(i64),
     Plus(usize, usize),
+    SetVar(String, usize),
+    GetVar(String),
+    Return(usize),
 }
 
 #[derive(Debug, PartialEq)]
-pub enum GenIRError {}
+pub enum VType {
+    Int,
+    None,
+}
+
+#[derive(Debug, PartialEq)]
+pub enum GenIRError {
+    VariableNotDefined,
+    VariableFound,
+}
 
 pub fn genir(root: ast::Root) -> Result<IR, GenIRError> {
     let g = Generator::new();
@@ -33,6 +42,7 @@ pub fn genir(root: ast::Root) -> Result<IR, GenIRError> {
 
 struct Generator {
     ops: Vec<Op>,
+    idents: HashSet<String>,
     pos: usize,
 }
 
@@ -40,6 +50,7 @@ impl Generator {
     fn new() -> Self {
         Self {
             ops: Vec::new(),
+            idents: HashSet::new(),
             pos: 0,
         }
     }
@@ -63,10 +74,41 @@ impl Generator {
     }
 
     fn generate(mut self, ast: ast::Root) -> Result<IR, GenIRError> {
-        for expr in ast.expr {
-            self.expr(&expr)?;
+        for stmt in ast.stmts {
+            self.stmt(&stmt)?;
         }
         Ok(IR { ops: self.ops })
+    }
+
+    fn stmt(&mut self, ast: &ast::Stmt) -> Result<(), GenIRError> {
+        match ast {
+            ast::Stmt::Expr(expr) => {
+                self.expr(expr)?;
+                Ok(())
+            }
+            ast::Stmt::Let(ident, expr) => {
+                let result = self.expr(expr)?;
+
+                if self.idents.contains(ident) {
+                    return Err(GenIRError::VariableFound);
+                }
+
+                self.push(Op {
+                    kind: OpKind::SetVar(ident.to_string(), result),
+                    result_type: VType::None,
+                });
+                self.idents.insert(ident.to_string());
+                Ok(())
+            }
+            ast::Stmt::Return(expr) => {
+                let result = self.expr(expr)?;
+                self.push(Op {
+                    kind: OpKind::Return(result),
+                    result_type: VType::None,
+                });
+                Ok(())
+            }
+        }
     }
 
     fn expr(&mut self, ast: &ast::Expr) -> Result<usize, GenIRError> {
@@ -87,6 +129,17 @@ impl Generator {
                 });
                 Ok(op)
             }
+            ast::Expr::Var(ident) => {
+                if !self.idents.contains(ident) {
+                    return Err(GenIRError::VariableNotDefined);
+                }
+
+                let op = self.push(Op {
+                    kind: OpKind::GetVar(ident.to_string()),
+                    result_type: VType::Int,
+                });
+                Ok(op)
+            }
         }
     }
 }
@@ -99,7 +152,7 @@ mod tests {
     fn int() {
         assert_eq!(
             genir(ast::Root {
-                expr: vec![ast::Expr::Int(15)]
+                stmts: vec![ast::Stmt::Expr(ast::Expr::Int(15))]
             }),
             Ok(IR {
                 ops: vec![Op {
@@ -113,10 +166,10 @@ mod tests {
     fn plus() {
         assert_eq!(
             genir(ast::Root {
-                expr: vec![ast::Expr::Plus(
+                stmts: vec![ast::Stmt::Expr(ast::Expr::Plus(
                     Box::new(ast::Expr::Int(15)),
                     Box::new(ast::Expr::Int(24))
-                )]
+                ))]
             }),
             Ok(IR {
                 ops: vec![
