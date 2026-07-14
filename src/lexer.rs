@@ -3,8 +3,13 @@ use std::{iter::Peekable, str::Bytes};
 #[derive(Debug, Clone)]
 pub enum Token {
     Int(i64),
+    Ident(String),
 
     Plus,
+    Equal,
+
+    Let,
+    Return,
 }
 
 #[derive(Clone)]
@@ -59,8 +64,14 @@ impl<'a> Lexer<'a> {
                 b'0'..=b'9' => {
                     self.num(b)?;
                 }
+                b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
+                    self.ident(b)?;
+                }
                 b'+' => {
                     self.result.push(Token::Plus);
+                }
+                b'=' => {
+                    self.result.push(Token::Equal);
                 }
                 _ => return Err(LexError::UnexpectedByte(b)),
             }
@@ -83,6 +94,30 @@ impl<'a> Lexer<'a> {
         }
 
         self.result.push(Token::Int(string.parse().unwrap()));
+
+        Ok(())
+    }
+
+    fn ident(&mut self, first_char: u8) -> Result<(), LexError> {
+        let mut string = String::new();
+        string.push(first_char as char);
+
+        while let Some(c) = self.script.peek() {
+            match c {
+                b'0'..=b'9' => string.push((*c) as char),
+                b'_' => {}
+                _ => break,
+            }
+            self.script.next();
+        }
+
+        let token = match string.as_str() {
+            "let" => Token::Let,
+            "return" => Token::Return,
+            _ => Token::Ident(string),
+        };
+
+        self.result.push(token);
 
         Ok(())
     }
