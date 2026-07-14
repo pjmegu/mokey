@@ -1,24 +1,29 @@
 use crate::ast;
 
+#[derive(Debug)]
 pub struct IR {
-    ops: Vec<Op>,
+    pub ops: Vec<Op>,
 }
 
+#[derive(Debug)]
 pub enum VType {
     Int,
 }
 
+#[derive(Debug)]
 pub struct Op {
-    kind: OpKind,
-    result_type: VType,
+    pub kind: OpKind,
+    pub result_type: VType,
 }
 
+#[derive(Debug)]
 pub enum OpKind {
     NOP,
     ConstInt(i64),
     Plus(usize, usize),
 }
 
+#[derive(Debug)]
 pub enum GenIRError {}
 
 pub fn genir(root: ast::Root) -> Result<IR, GenIRError> {
