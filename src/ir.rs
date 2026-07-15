@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::{collections::HashSet, ops::Deref};
 
 use crate::ast;
 
@@ -21,6 +21,7 @@ pub enum OpKind {
     SetVar(String, usize),
     GetVar(String),
     Return(usize),
+    Print(usize),
 }
 
 #[derive(Debug, PartialEq)]
@@ -120,6 +121,7 @@ impl Generator {
                 });
                 Ok(op)
             }
+            ast::Expr::BuiltinVar(_) => todo!(),
             ast::Expr::Plus(lhs, rhs) => {
                 let lhs = self.expr(lhs)?;
                 let rhs = self.expr(rhs)?;
@@ -138,6 +140,23 @@ impl Generator {
                     kind: OpKind::GetVar(ident.to_string()),
                     result_type: VType::Int,
                 });
+                Ok(op)
+            }
+            ast::Expr::Call(callee, args) => {
+                let args = args
+                    .iter()
+                    .map(|arg| self.expr(arg))
+                    .collect::<Result<Vec<_>, _>>()?;
+
+                if *(callee.deref()) != ast::Expr::BuiltinVar("Print".to_string()) {
+                    todo!()
+                }
+
+                let op = self.push(Op {
+                    kind: OpKind::Print(args[0]),
+                    result_type: VType::None,
+                });
+
                 Ok(op)
             }
         }
@@ -240,6 +259,25 @@ mod tests {
                     Op {
                         kind: OpKind::Return(0),
                         result_type: VType::None,
+                    }
+                ]
+            })
+        )
+    }
+
+    #[test]
+    fn print() {
+        ir_assert!(
+            "@Print(15)",
+            Ok(IR {
+                ops: vec![
+                    Op {
+                        kind: OpKind::ConstInt(15),
+                        result_type: VType::Int,
+                    },
+                    Op {
+                        kind: OpKind::Print(0),
+                        result_type: VType::None
                     }
                 ]
             })
