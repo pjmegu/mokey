@@ -4,6 +4,7 @@ use std::{iter::Peekable, str::Bytes};
 pub enum Token {
     Int(i64),
     Ident(String),
+    BuiltinIdent(String),
 
     Plus,
     Equal,
@@ -67,6 +68,9 @@ impl<'a> Lexer<'a> {
                 b'a'..=b'z' | b'A'..=b'Z' | b'_' => {
                     self.ident(b)?;
                 }
+                b'@' if matches!(self.script.peek(), Some(b'a'..=b'z' | b'A'..=b'Z' | b'_')) => {
+                    self.builtin_ident()?;
+                }
                 b'+' => {
                     self.result.push(Token::Plus);
                 }
@@ -117,6 +121,22 @@ impl<'a> Lexer<'a> {
         };
 
         self.result.push(token);
+
+        Ok(())
+    }
+
+    fn builtin_ident(&mut self) -> Result<(), LexError> {
+        let mut string = String::new();
+
+        while let Some(c) = self.script.peek() {
+            match c {
+                b'a'..=b'z' | b'A'..=b'Z' | b'0'..=b'9' | b'_' => string.push((*c) as char),
+                _ => break,
+            }
+            self.script.next();
+        }
+
+        self.result.push(Token::BuiltinIdent(string));
 
         Ok(())
     }
@@ -179,12 +199,11 @@ mod tests {
 
     #[test]
     fn return_stmt() {
-        lex_assert!(
-            "return 15",
-            Ok(vec![
-                Token::Return,
-                Token::Int(15)
-            ])
-        )
+        lex_assert!("return 15", Ok(vec![Token::Return, Token::Int(15)]))
+    }
+
+    #[test]
+    fn builtin_ident() {
+        lex_assert!("@test", Ok(vec![Token::BuiltinIdent("test".to_string())]))
     }
 }
