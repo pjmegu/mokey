@@ -14,5 +14,7 @@ pub enum Stmt {
 pub enum Expr {
     Int(i64),
     Var(String),
+    BuiltinVar(String),
     Plus(Box<Expr>, Box<Expr>),
+    Call(Box<Expr>, Vec<Expr>),
 }
