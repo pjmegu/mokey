@@ -148,12 +148,19 @@ impl Generator {
 mod tests {
     use super::*;
 
+    macro_rules! ir_assert {
+        ($input:expr, $e:expr) => {
+            assert_eq!(
+                genir(crate::parser::parse(&crate::lexer::lexer($input).unwrap()).unwrap()),
+                $e
+            )
+        };
+    }
+
     #[test]
     fn int() {
-        assert_eq!(
-            genir(ast::Root {
-                stmts: vec![ast::Stmt::Expr(ast::Expr::Int(15))]
-            }),
+        ir_assert!(
+            "15",
             Ok(IR {
                 ops: vec![Op {
                     kind: OpKind::ConstInt(15),
@@ -162,15 +169,11 @@ mod tests {
             })
         )
     }
+
     #[test]
     fn plus() {
-        assert_eq!(
-            genir(ast::Root {
-                stmts: vec![ast::Stmt::Expr(ast::Expr::Plus(
-                    Box::new(ast::Expr::Int(15)),
-                    Box::new(ast::Expr::Int(24))
-                ))]
-            }),
+        ir_assert!(
+            "15 + 24",
             Ok(IR {
                 ops: vec![
                     Op {
@@ -184,6 +187,59 @@ mod tests {
                     Op {
                         kind: OpKind::Plus(0, 1),
                         result_type: VType::Int
+                    }
+                ]
+            })
+        )
+    }
+
+    #[test]
+    fn let_stmt() {
+        ir_assert!(
+            "
+            let a = 15
+            a + 24
+            ",
+            Ok(IR {
+                ops: vec![
+                    Op {
+                        kind: OpKind::ConstInt(15),
+                        result_type: VType::Int,
+                    },
+                    Op {
+                        kind: OpKind::SetVar("a".to_string(), 0),
+                        result_type: VType::None
+                    },
+                    Op {
+                        kind: OpKind::GetVar("a".to_string()),
+                        result_type: VType::Int,
+                    },
+                    Op {
+                        kind: OpKind::ConstInt(24),
+                        result_type: VType::Int,
+                    },
+                    Op {
+                        kind: OpKind::Plus(2, 3),
+                        result_type: VType::Int,
+                    }
+                ]
+            })
+        )
+    }
+
+    #[test]
+    fn return_stmt() {
+        ir_assert!(
+            "return 15",
+            Ok(IR {
+                ops: vec![
+                    Op {
+                        kind: OpKind::ConstInt(15),
+                        result_type: VType::Int,
+                    },
+                    Op {
+                        kind: OpKind::Return(0),
+                        result_type: VType::None,
                     }
                 ]
             })

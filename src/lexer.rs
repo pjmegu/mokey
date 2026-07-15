@@ -1,6 +1,6 @@
 use std::{iter::Peekable, str::Bytes};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Int(i64),
     Ident(String),
@@ -12,7 +12,7 @@ pub enum Token {
     Return,
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq)]
 pub enum LexError {
     UnexpectedByte(u8),
 }
@@ -140,24 +140,51 @@ mod tests {
     use super::*;
 
     macro_rules! lex_assert {
-        ($input:expr, $pat:pat) => {
-            std::assert_matches!(lexer($input).as_deref(), $pat)
+        ($input:expr, $e:expr) => {
+            std::assert_eq!(lexer($input), $e)
         };
     }
 
     #[test]
     fn num() {
-        lex_assert!("42", Ok([Token::Int(42)]));
-        lex_assert!("1_4", Ok([Token::Int(14)]));
+        lex_assert!("42", Ok(vec![Token::Int(42)]));
+        lex_assert!("1_4", Ok(vec![Token::Int(14)]));
     }
 
     #[test]
     fn num_many() {
-        lex_assert!("42 24", Ok([Token::Int(42), Token::Int(24)]))
+        lex_assert!("42 24", Ok(vec![Token::Int(42), Token::Int(24)]))
     }
 
     #[test]
     fn plus_sign() {
-        lex_assert!("42+39", Ok([Token::Int(42), Token::Plus, Token::Int(39)]))
+        lex_assert!(
+            "42+39",
+            Ok(vec![Token::Int(42), Token::Plus, Token::Int(39)])
+        )
+    }
+
+    #[test]
+    fn let_stmt() {
+        lex_assert!(
+            "let a = 15",
+            Ok(vec![
+                Token::Let,
+                Token::Ident("a".to_string()),
+                Token::Equal,
+                Token::Int(15)
+            ])
+        )
+    }
+
+    #[test]
+    fn return_stmt() {
+        lex_assert!(
+            "return 15",
+            Ok(vec![
+                Token::Return,
+                Token::Int(15)
+            ])
+        )
     }
 }

@@ -149,4 +149,24 @@ mod tests {
             })
         )
     }
+
+    #[test]
+    fn let_stmt() {
+        parse_assert_eq!(
+            "let a = 15",
+            Ok(ast::Root {
+                stmts: vec![ast::Stmt::Let("a".to_string(), ast::Expr::Int(15))]
+            })
+        )
+    }
+
+    #[test]
+    fn return_stmt() {
+        parse_assert_eq!(
+            "return 15",
+            Ok(ast::Root {
+                stmts: vec![ast::Stmt::Return(ast::Expr::Int(15))]
+            })
+        )
+    }
 }
