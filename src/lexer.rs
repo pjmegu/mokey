@@ -8,6 +8,9 @@ pub enum Token {
 
     Plus,
     Equal,
+    LParen,
+    RParen,
+    Comma,
 
     Let,
     Return,
@@ -76,6 +79,15 @@ impl<'a> Lexer<'a> {
                 }
                 b'=' => {
                     self.result.push(Token::Equal);
+                }
+                b'(' => {
+                    self.result.push(Token::LParen);
+                }
+                b')' => {
+                    self.result.push(Token::RParen);
+                }
+                b',' => {
+                    self.result.push(Token::Comma);
                 }
                 _ => return Err(LexError::UnexpectedByte(b)),
             }
