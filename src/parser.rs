@@ -91,6 +91,7 @@ impl<'a> Parser<'a> {
         let mut leading = match self.next() {
             Some(Token::Int(i)) => ast::Expr::Int(*i),
             Some(Token::Ident(i)) => ast::Expr::Var(i.clone()),
+            Some(Token::BuiltinIdent(i)) => ast::Expr::BuiltinVar(i.clone()),
             Some(_) | None => return Ok(None),
         };
 
@@ -110,6 +111,47 @@ impl<'a> Parser<'a> {
                         None => return Err(ParseError::ExpectedToken),
                     };
                     leading = ast::Expr::Plus(Box::new(leading), Box::new(following));
+                }
+                Some(Token::LParen) => {
+                    const FOWARD_BP: usize = 60;
+
+                    if min_bp >= FOWARD_BP {
+                        return Ok(Some(leading));
+                    }
+
+                    self.next();
+
+                    let mut args = Vec::new();
+                    loop {
+                        match self.peek(0) {
+                            Some(Token::RParen) => {
+                                self.next();
+                                break;
+                            }
+                            Some(_) => {
+                                let expr = match self.expr()? {
+                                    Some(expr) => expr,
+                                    None => return Err(ParseError::UnexpectedToken),
+                                };
+
+                                args.push(expr);
+
+                                match self.peek(0) {
+                                    Some(Token::Comma) => {
+                                        self.next();
+                                    }
+                                    Some(Token::RParen) => {
+                                        self.next();
+                                        break;
+                                    }
+                                    _ => return Err(ParseError::UnexpectedToken),
+                                }
+                            }
+                            None => return Err(ParseError::ExpectedToken),
+                        }
+                    }
+
+                    leading = ast::Expr::Call(Box::new(leading), args)
                 }
                 _ => return Ok(Some(leading)),
             }
@@ -166,6 +208,32 @@ mod tests {
             "return 15",
             Ok(ast::Root {
                 stmts: vec![ast::Stmt::Return(ast::Expr::Int(15))]
+            })
+        )
+    }
+
+    #[test]
+    fn call_fucn() {
+        parse_assert_eq!(
+            "@print(15)",
+            Ok(ast::Root {
+                stmts: vec![ast::Stmt::Expr(ast::Expr::Call(
+                    Box::new(ast::Expr::BuiltinVar("print".to_string())),
+                    vec![ast::Expr::Int(15)]
+                ))]
+            })
+        )
+    }
+
+    #[test]
+    fn call_func_multi_arg() {
+        parse_assert_eq!(
+            "@print(15, 24)",
+            Ok(ast::Root {
+                stmts: vec![ast::Stmt::Expr(ast::Expr::Call(
+                    Box::new(ast::Expr::BuiltinVar("print".to_string())),
+                    vec![ast::Expr::Int(15), ast::Expr::Int(24)]
+                ))]
             })
         )
     }
