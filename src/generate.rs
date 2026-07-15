@@ -45,6 +45,9 @@ impl Generator {
                     let expr = format!("var_{ident}");
                     self.lines.push(format!("{ty} v{vnum} = {expr};"));
                 }
+                ir::OpKind::Print(arg) => {
+                    self.lines.push(format!(r#"printf("%d\n", v{arg});"#));
+                }
                 ir::OpKind::Return(expr) => {
                     self.lines.push(format!("return v{expr};"));
                 }
@@ -52,7 +55,7 @@ impl Generator {
         }
 
         let c = format!(
-            r#"
+            r#"#include <stdio.h>
 int main() {{
 {}
 }}
