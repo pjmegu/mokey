@@ -52,12 +52,12 @@ impl<'ctx> CtxInner<'ctx> {
         registry.regist(reg);
     }
 
-    pub(crate) fn define_op(&mut self, def: impl OpDef + 'ctx) {
+    fn define_op(&mut self, def: impl OpDef + 'ctx) {
         let res = self.op_defs.insert(OpDefHash::from(&def), Box::new(def));
         assert!(res.is_none())
     }
 
-    pub(crate) fn add_op(&mut self, op: Op) {
+    fn add_op(&mut self, op: Op) {
         let res = self.ops.insert(OpId::new(), op);
         assert!(res.is_none())
     }
