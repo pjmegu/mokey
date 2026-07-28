@@ -1,5 +1,6 @@
 pub mod op;
 pub mod reg;
+mod hash;
 mod util;
 
 pub mod prelude {
@@ -23,7 +24,7 @@ impl<'ctx> Ctx<'ctx> {
         Self(Rc::new(RefCell::new(CtxInner::new())))
     }
 
-    pub fn regist(&self, registry: impl Registry) {
+    pub fn regist(&self, registry: &mut impl Registry) {
         self.0.borrow_mut().regist(registry)
     }
 
@@ -47,14 +48,16 @@ impl<'ctx> CtxInner<'ctx> {
         }
     }
 
-    fn regist(&mut self, registry: impl Registry) {
+    fn regist(&mut self, registry: &mut impl Registry) {
         let reg = Register::new(self);
         registry.regist(reg);
     }
 
-    fn define_op(&mut self, def: impl OpDef + 'ctx) {
-        let res = self.op_defs.insert(OpDefHash::from(&def), Box::new(def));
-        assert!(res.is_none())
+    fn define_op(&mut self, def: impl OpDef + 'ctx) -> OpDefHash {
+        let hash = OpDefHash::from(&def);
+        let res = self.op_defs.insert(hash, Box::new(def));
+        assert!(res.is_none());
+        hash
     }
 
     fn add_op(&mut self, op: Op) {

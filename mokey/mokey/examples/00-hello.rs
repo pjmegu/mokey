@@ -1,14 +1,27 @@
+use std::cell::OnceCell;
+
 use mokey::prelude::*;
 
 fn main() {
     let ctx = Ctx::new();
-    ctx.regist(Reg {});
+    let mut reg = Reg::default();
+    ctx.regist(&mut reg);
 }
 
-struct Reg;
+#[derive(Default)]
+struct Reg {
+    hello_op: OnceCell<OpDefHash>,
+}
+
+impl Reg {
+    fn hello_op(&self) -> OpDefHash {
+        self.hello_op.get().expect("before registration").clone()
+    }
+}
+
 impl Registry for Reg {
-    fn regist(&self, mut reg: Register<'_, '_>) {
-        reg.regist_op(HelloOp {});
+    fn regist(&mut self, mut reg: Register<'_, '_>) {
+        self.hello_op.get_or_init(|| reg.regist_op(HelloOp {}));
     }
 }
 
